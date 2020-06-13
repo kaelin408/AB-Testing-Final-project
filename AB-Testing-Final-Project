@@ -3,27 +3,161 @@ Step 1: Choose invariant metrics for sanity check
 (2) "number of clicks on 'start free trial' button"
 
 Step 2: Choose variant metrics for evaluation
+(1) Gross conversion: # of students who complete the check out process / by # of unique cookies to click "start free trial"
+(2) Net conversion:# of user-ids to remain enrolled after 14 days / by the # of unique cookies to click "start free trial"
 
+Step 3: Choose unit of diversion
+(1) choose cookies as unit of diversion
 
+Step 4: Calculate standard deviation for evaluation metrics
 
-
-In [1]: 
 import pandas as pd
-import numpy as np
+import math as np
 
-In [2]:
+
 pageviews = 5000
 
-df = pd.read_excel("/Users/honglinshuo/Desktop/final-project-baseline-values.xlsx",
-header=None,names = ['metrics','value'])df
-
-Out[3]:
+df_basevals = pd.read_csv("data/baseline_vals.csv", index_col=False,header = None, names = ['metric','baseline_val'])
+df_basevals.metric = df_basevals.metric.map(lambda x: x.lower())
+df_basevals
 
 	metric-----------------------------------------------------------------------------------baseline_val
-0	unique cookies to view page per day:	                                                   40000.000000
-1	unique cookies to click "start free trial" per...	                                       3200.000000
-2	enrollments per day:	                                                                   660.000000
-3	click-through-probability on "start free trial":	                                       0.080000
-4	probability of enrolling, given click:	                                                 0.206250
-5	probability of payment, given enroll:	0.530000
-6	probability of payment, given click	0.109313
+0	unique cookies to view page per day:	                                                  40000.000000
+1	unique cookies to click "start free trial" per	                                          3200.000000
+2	enrollments per day:	                                                                  660.000000
+3	click-through-probability on "start free trial"	                                          0.080000
+4	probability of enrolling, given click	                                                  0.206250
+5	probability of payment, given enroll	                                                  0.530000
+6	probability of payment, given click	                                                  0.109313
+
+standard deviation of Gross Conversion
+answer:0.0202
+equation: round(np.sqrt((.206250*(1-.206250))/(5000*3200/40000)),4)
+
+standard deviation of Net Conversion
+answer:0.0156
+equation:round(np.sqrt((.109313*(1-.109313))/(5000*3200/40000)),4)
+
+Step 5: Determine the Sample Size
+(1) calculations of Sample sizes required for Gross Conversion and Net Conversion 
+
+sampleSize = pd.DataFrame({'SampleSize':[25835,27413]}, index = ['Gross Conversion','Net Conversion'])
+SampleSize---------------------------
+25835                               Gross Conversion
+27413                               Net Conversion
+
+answer:685325.0
+equation:Total_Sample_Size = 27413*2/(3200/40000)print("Sample Size for Control Group and Experiment Group is {}".format(Total_Sample_Size))
+
+Step 6: Choosing Duration and Exposure
+(1) traffic of Udacity
+answer:17.133125
+equation:685325.0/40000
+
+Step 7: Sanity Checks for Invariant Metrics
+(1) evalueate populations the two groups if they are comparable 
+(2) compute a 95% confidence level
+
+sanity_ctl = pd.read_excel("/Users/honglinshuo/Desktop/AB_Test/Sanity_Check.xlsx", sheet_name = 'Control')
+sanity_exp = pd.read_excel("/Users/honglinshuo/Desktop/AB_Test/Sanity_Check.xlsx", sheet_name = 'Experiment')
+
+sanity_ctl.head(5)
+	Date-------------Pageviews--------Clicks-------------Enrollments--------Payments
+0	Sat, Oct 11	7723        	  687                   134.0              70.0
+1	Sun, Oct 12	9102	          779                   147.0              70.0
+2	Mon, Oct 13	10511	          909                   167.0              95.0
+3	Tue, Oct 14	9871	          836                   156.0              105.0
+4	Wed, Oct 15	10014	          837                   163.0              64.0
+
+sanity_exp.head(5)
+ 	Date		Pageviews-------Clicks------------------Enrollments--------Payments
+0	Sat, Oct 11	7716		686			105.0		    34.0
+1	Sun, Oct 12	9288		785			116.0		    91.0
+2	Mon, Oct 13	10480		884			145.0		    79.0
+3	Tue, Oct 14	9867		827			138.0		    92.0
+4	Wed, Oct 15	9793		832			140.0		    94.0
+
+sanity check for number of unique cookies that visited homepage
+answer of the ratio of pageviews in control:0.5006
+equation of the ratio of pageviews in control:pageviews_ctl = total_pageviews_ctl/(total_pageviews_ctl+total_pageviews_exp)print("the ratio of pageviews in control group is {}".format(round(pageviews_ctl,4)))
+
+answer of the 95% confidence level for number of unique cookies:0.4988,0.5012
+equation of the 95% confidence level for number of unique cookies:
+sd_pv = math.sqrt(0.5*0.5/(total_pageviews_ctl+total_pageviews_exp))
+me_pv = 1.96 * sd_pv 
+lower_bound = 0.5 - me_pv
+upper_bound = 0.5 + me_pv
+print("the 95% confidence level for number of unique cookies is ({},{})".format(round(lower_bound,4),round(upper_bound,4)))
+
+sanity check for number of clicks
+answer of the ratio of number of unique cookies:0.5005
+equation of the ratio of number of unique cookies:clicks_ctl = round(total_clicks_ctl/(total_clicks_ctl+total_clicks_exp),4)clicks_ctl
+
+answer of the 95% confidence level for number of click:0.4959,0.5041
+equation the 95% confidence level for number of click:
+sd_nc = math.sqrt(0.5*0.5/(total_clicks_ctl+total_clicks_exp))
+me_nc = 1.96 * sd_nc
+lower_bound = 0.5 - me_nc
+upper_bound = 0.5 + me_nc
+print("the 95% confidence level for number of clicks is ({},{})".format(round(lower_bound,4),round(upper_bound,4)))
+
+the Ratio of number of clicks in the control group passes the sanity cheack because it falls within the 95% confidence interval
+
+Step 8: Effect Size Tests For Evaluation Metrics
+
+Effect size test for Gross Conversion
+answer of Difference of Gross Conversion between Control Group and Experiment Group:-0.0206
+equation of Difference of Gross Conversion between Control Group and Experiment Group:
+ctl_enroll_prob = sum(sanity_ctl_nona['Enrollments'])/sum(sanity_ctl_nona['Clicks'])
+exp_enroll_prob = sum(sanity_exp_nona['Enrollments'])/sum(sanity_exp_nona['Clicks'])
+diff_enroll_prob = exp_enroll_prob - ctl_enroll_prob
+print("Difference of Gross Conversion between Control Group and Experiment Group is {}".format(round(diff_enroll_prob,4)))
+
+answer of pooled standard error for Gross Conversion:0.0044
+equation of pooled standard error for Gross Conversion:
+enroll_prob = (sum(sanity_ctl_nona['Enrollments'])+sum(sanity_exp_nona['Enrollments']))/(sum(sanity_ctl_nona['Clicks'])+sum(sanity_exp_nona['Clicks']))
+pooled_sd_gc = math.sqrt(enroll_prob*(1-enroll_prob)*(1/sum(sanity_ctl_nona['Clicks'])+1/sum(sanity_exp_nona['Clicks'])))
+
+answer ofthe 95% confidence interval for proportion difference(-0.0291),(-0.012)
+equation the 95% confidence interval for proportion difference:
+print("So the pooled standard error for Gross Conversion is {}".format(round(pooled_sd_gc,4)))
+lower_bound_gc = diff_enroll_prob - 1.96*pooled_sd_gc
+upper_bound_gc = diff_enroll_prob + 1.96*pooled_sd_gc
+print("So the 95% confidence interval for proportion difference is ({},{})".format(round(lower_bound_gc,4),round(upper_bound_gc,4)))
+
+ the difference of the Gross Inversion between Control group and Experiment group,
+ is concedered statistically and practically significant because 
+ neither 0 nor 0.01 fallen  within the 95% confidence interval
+ 
+
+Effect size test for Net Conversion
+answer of Difference of Net Conversion between Control Group and Experiment Group:-0.0049
+equation of Difference of Net Conversion between Control Group and Experiment Group:
+diff_pay_prob = exp_pay_prob - ctl_pay_prob
+print("Difference of Net Conversion between Control Group and Experiment Group is {}".format(round(diff_pay_prob,4)))
+
+answer of pooled standard error for Net Conversion: 0.0034
+equation of pooled standard error for Net Conversion: 
+pay_prob = (sum(sanity_ctl_nona['Payments'])+sum(sanity_exp_nona['Payments']))/(sum(sanity_ctl_nona['Clicks'])+sum(sanity_exp_nona['Clicks']))
+pooled_sd_nc = math.sqrt(pay_prob*(1-pay_prob)*(1/sum(sanity_ctl_nona['Clicks'])+1/sum(sanity_exp_nona['Clicks'])))
+print("So the pooled standard error for Net Conversion is {}".format(round(pooled_sd_nc,4)))
+
+answer of 95% confidence interval for proportion difference:(-0.0116),(0.0019)
+equation of 95% confidence interval for proportion difference: 
+lower_bound_nc = diff_pay_prob - 1.96*pooled_sd_nc
+upper_bound_nc = diff_pay_prob + 1.96*pooled_sd_nc
+print("So the 95% confidence interval for proportion difference is ({},{})".format(round(lower_bound_nc,4),round(upper_bound_nc,4)))
+
+the difference of Net Inversion between Control group and Experiment group is not statiscally or practically significan
+because 0 and 0.0075 raily falls within the 95% confidence interval
+
+Step 9: Make A Recommendation
+
+It was hard becuses the enstructions were not as accuret in telling how to start the progect. I felt like I wasted more
+time running around trying to find the enstructions then actually working on the project. it will be nice to have a more 
+clearer enstructions for this project. In addition there is a lot of data to be run it would be more benifetual if the
+students were alowed extra time to setup the project.
+
+
+
+
