@@ -1,0 +1,29 @@
+Step 1: Choose invariant metrics for sanity check
+(1) "number of unique cookies to view the home page"
+(2) "number of clicks on 'start free trial' button"
+
+Step 2: Choose variant metrics for evaluation
+
+
+
+
+In [1]: 
+import pandas as pd
+import numpy as np
+
+In [2]:
+pageviews = 5000
+
+df = pd.read_excel("/Users/honglinshuo/Desktop/final-project-baseline-values.xlsx",
+header=None,names = ['metrics','value'])df
+
+Out[3]:
+
+	metric-----------------------------------------------------------------------------------baseline_val
+0	unique cookies to view page per day:	                                                   40000.000000
+1	unique cookies to click "start free trial" per...	                                       3200.000000
+2	enrollments per day:	                                                                   660.000000
+3	click-through-probability on "start free trial":	                                       0.080000
+4	probability of enrolling, given click:	                                                 0.206250
+5	probability of payment, given enroll:	0.530000
+6	probability of payment, given click	0.109313
